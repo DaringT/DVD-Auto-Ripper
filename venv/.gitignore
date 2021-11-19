@@ -6,3 +6,16 @@ watcher.py
 metadata.py
 
 .vscode/
+
+movies_metadata.csv
+hb_rip
+test
+*_RAW_rip
+*_HB_rip
+
+test.*
+*.mkv
+*.mp4
+*.m4v
+*.csv
+.vscode
