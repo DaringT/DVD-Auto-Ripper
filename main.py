@@ -1,14 +1,18 @@
+from Drive import Drive
+
 import json
 import logging
 import subprocess
+from dataclasses import dataclass
 from typing import Callable, List
 
 import win32api, win32con, win32gui
-from auto_rip import Drive
 
-# logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+from auto_rip import rip_dvds
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class DeviceListener:
 	"""
@@ -18,7 +22,7 @@ class DeviceListener:
 	See: https://docs.microsoft.com/en-us/windows/win32/devio/wm-devicechange
 	"""
 	WM_DEVICECHANGE_EVENTS = {
-		0x0019: ('DBT_CONFIGCHANGECANCELED','A request to change the current configuration (dock or undock) has been canceled.'),
+		0x0019: ('DBT_CONFIGCHANGECANCELED', 'A request to change the current configuration (dock or undock) has been canceled.'),
 		0x0018: ('DBT_CONFIGCHANGED', 'The current configuration has changed, due to a dock or undock.'),
 		0x8006: ('DBT_CUSTOMEVENT', 'A custom event has occurred.'),
 		0x8000: ('DBT_DEVICEARRIVAL', 'A device or piece of media has been inserted and is now available.'),
@@ -63,7 +67,7 @@ class DeviceListener:
 			return 0
 		event, description = self.WM_DEVICECHANGE_EVENTS[wparam]
 		logger.debug(f'Received message: {event} = {description}')
-		if event in ('DBT_DEVICEARRIVAL'):#, 'DBT_DEVICEREMOVECOMPLETE'):
+		if event in ('DBT_DEVICEREMOVECOMPLETE', 'DBT_DEVICEARRIVAL'):
 			# logger.info('A device has been plugged in (or out)')
 			logger.info('A device has been plugged in')
 			self.on_change(self.list_drives())
@@ -106,27 +110,6 @@ class DeviceListener:
 				drive_type=drive_types[d['drivetype']]
 		) for d in devices]
 
-
-def on_devices_changed(drives: List[Drive]):
-	removable_drives = [d for d in drives if d.is_compact_disc]
-	# removable_drives = [d for d in drives if d.is_removable] # gets all removable drives
-	logger.debug(f'Connected removable drives: {removable_drives}')
-	for drive in removable_drives:
-		# TODO make trigger for my code
-		logger.debug(f'Drive: {drive.letter} is type: {drive.drive_type}')
-		backup(drive)
-
-
-def backup(drive: Drive, backup_drive="ABDOUS"):
-	'''Whenever the the backup drive is inserted this function is triggered'''
-
-	if drive.label != backup_drive:
-		return
-	logger.info('Backup drive has been plugged in')
-	logger.info(f'Backing up {drive.letter}')
-
-
 if __name__ == '__main__':
-	# listener = DeviceListener(on_change=on_devices_changed)
-	# listener.start()
-	print(DeviceListener.list_drives())
+	listener = DeviceListener(on_change=rip_dvds)
+	listener.start()

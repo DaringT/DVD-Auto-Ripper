@@ -1,97 +1,151 @@
 import os, sys
+from pprint import pprint
 import subprocess
-import time
 import logging
-from collections import namedtuple
-from dataclasses import dataclass
-from platform import system as platform_name
-from os import system
-import ctypes
+from typing import Callable, List
+import json
+
+from makemkv import MakeMKV, ProgressParser
+
+from Drive import Drive
+
+logging.basicConfig(level=logging.INFO, filemode="w", filename="DVD_AUTO_RIPPER.log")
+logger = logging.getLogger(__name__)
+
+def list_drives() -> List[Drive]:
+		"""
+		Get a list of drives using WMI
+		:return: list of drives
+		"""
+		proc = subprocess.run(
+					args=[
+						'powershell',
+				   					'-noprofile',
+				   					'-command',
+				   					'Get-WmiObject -Class Win32_LogicalDisk | Select-Object deviceid,volumename,drivetype | ConvertTo-Json'
+					],
+					text=True,
+					stdout=subprocess.PIPE
+		)
+		if proc.returncode != 0 or not proc.stdout.strip():
+			logger.error('Failed to enumerate drives')
+			return []
+		devices = json.loads(proc.stdout)
+
+		drive_types = {
+			0: 'Unknown',
+			1: 'No Root Directory',
+			2: 'Removable Disk',
+			3: 'Local Disk',
+			4: 'Network Drive',
+			5: 'Compact Disc',
+			6: 'RAM Disk',
+		}
+
+		return [Drive(
+					letter=d['deviceid'],
+					label=d['volumename'],
+					drive_type=drive_types[d['drivetype']]
+		) for d in devices]
+
+
+def files(path):
+	for file in os.listdir(path):
+		if os.path.isfile(os.path.join(path, file)):
+			yield file
+
+def makemkv(output_dir, drive: Drive, rip_one_title=False):
+		with ProgressParser() as progress:
+				makemkv = MakeMKV(drive.letter, progress_handler=progress.parse_progress)
+				title = 0 if rip_one_title else "all"
+				makemkv.mkv(0, output_dir=output_dir)
 
 
 
-@dataclass
-class Drive:
-	letter: str
-	label: str
-	drive_type: str
-
-	@property
-	def is_removable(self) -> bool:
-		return self.drive_type == 'Removable Disk'
-
-	@property
-	def is_compact_disc(self) -> bool:
-		return self.drive_type == 'Compact Disc'
-
-	def eject(self):
-		ctypes.windll.WINMM.mciSendStringW(f"open {self.letter.upper()}: type cdaudio alias {self.letter.lower()}_drive", None, 0, None)
-		ctypes.windll.WINMM.mciSendStringW(f"set {self.letter.lower()}_drive door open", None, 0, None)
+def _makemkv_sys(output_path, drive: Drive, min_length=3600):
+	if not os.path.exists(output_path):
+		os.mkdir(output_path)
+	makemkvcon = "C:\\Program Files (x86)\\MakeMKV\\makemkvcon.exe"
+	# command = [makemkvcon, f"--minlength={min_length}",
+    #         "mkv", f"drive:{drive.letter}", "0", output_path]
+	command = [makemkvcon, "mkv", f"drive:{drive.letter}", "all", output_path]
+	# "C:\Program Files (x86)\MakeMKV\makemkvcon64.exe" -r info dev:D:\
+	# command = [makemkvcon, "-r", "info", "dev:" + drive.letter]
+	print(" ".join(command))
 
 
+def compress_movie_folder(input_folder, output_folder, output_file_type=".mp4", del_raw_rip=True):
+	# Danger if output_file_type is mkv problems can occur
+	json_preset = r"C:\Users\Daren\Videos\Testing Stuff\Custom.json"
+	handbrake_cli = r"C:\Users\Daren\HandBrakeCLI.exe"
+
+	for input_file in files(input_folder):
+		f_name, exten = os.path.splitext(input_file)
+
+		if exten not in {".mkv", ".mp4"}:
+			continue
+
+		input_path = os.path.join(input_folder, input_file)
+		output_path = os.path.join(output_folder, f"{f_name}{output_file_type}")
+		raw_rip_path = output_path+"_raw"
+
+		os.mkdir(raw_rip_path)
+		print(f"{raw_rip_path=}")
+
+		command = [handbrake_cli, "-i", input_path, "--json", json_preset, "-o", output_path]
+		subprocess.run(command)
+
+		print(f"{input_file!r}: Done")
 
 
-def makemkv(output_path, disc_letter, min_length=3600):
-	if os.path.exists(output_path):
-		makemkvcon = "C:\\Program Files (x86)\\MakeMKV\\makemkvcon64.exe"
-		command = [makemkvcon, f"--minlength={min_length}", "mkv", f"disc:{disc_letter}", "all", output_path]
-		# "C:\Program Files (x86)\MakeMKV\makemkvcon64.exe" -r info dev:D:\
-		# command = [makemkvcon, "-r", "info", "dev:" + disc_letter]
-		m1 = subprocess.run(command, shell=True, text=True, capture_output=True)
-
-		if m1.returncode != 0:
-			return False
-
-		print(m1.stdout)
-
-		error_code = "MSG:5010,0,0,\"Failed to open disc","Failed to open disc\""
-		lines = m1.stdout.splitlines()[::-1]
-		for line in lines:
-			if error_code == line:
-				return False
-			else:
-				return True
-	else:
+def rm_dir(path):
+	cwd = os.getcwd()
+	if not os.path.exists(path):
 		return False
+	os.chdir(os.path.join(cwd, path))
 
-def handbrake(path, output_path):
-	# TODO: get figure out if a TRULY subprocess Failed FOR (MAKEMKV & HBrake)
-	if os.path.exists(path):
-		handbrake_cli = r"C:\Users\Daren\HandBrakeCLI.exe"
-		input = r"C:\Users\Daren\Videos\Testing_files\testmkv.mkv"
-		json_preset = r"C:\Users\Daren\Documents\preset Handbrake custom.json"
+	for file in os.listdir():
+		print("file = " + file)
+		os.remove(file)
+	os.chdir(cwd)
+	os.rmdir(path)
 
-		command = [handbrake_cli, "-i", input, "--json", json_preset, output_path]
-		# command = ["echo", "hello"]
-
-		h1 = subprocess.run(command, shell=True, text=True, capture_output=True)
-		print(f"{h1.returncode = }")
-		print(f"{h1.stdout = }")
-
-		if h1.returncode != 0:
-			return False
-
-	else:
-		return False
 
 def rip_dvd(input_drive: Drive):
-	# Danger This is a just a WROUGHT Script
-	# 1: Make WATCH DOG
-	# todo 2: Get DVD DATA
-	# Todo 3: Need to Movie Metadata
-	# TODO 4: Need to dynamically make the rip dir
-	# 5: get figure out if a TRULY subprocess Failed FOR (MAKEMKV & HBrake)
-	raw_mkv_output = input_drive.label+"_mkv_raw"
-	handbrake_output = str
 
-	if makemkv(output_path=raw_mkv_output ,disc_letter=input_drive.letter):
-		if handbrake(raw_mkv_output, output_path=handbrake_output):
-			return True
-		else: return False
-	else: return False
+	if input_drive.label is None:
+		raise Exception("There was no Drive inserted")
+
+	logger.info(f'Ripping DVD: {input_drive.letter} {input_drive.label}')
+
+	# Step 1: Make the Rip Folder
+	dvd_rip_folder = os.path.join(os.getcwd(), input_drive.label+"_raw")
+	logger.debug(f"dvd_rip_folder= {dvd_rip_folder!r}")
+
+	os.mkdir(dvd_rip_folder)
+	# Step 2: Rip DVD
+	logger.info(f'Ripping {input_drive.label} {input_drive.label} with MakeMKV')
+	makemkv(output_dir=dvd_rip_folder, drive=input_drive, rip_one_title=True)
+
+	# Step 3 Eject Disc
+	input_drive.eject()
+
+	# Step 4 Make Compressed Folder
+	commpressed_folder = os.path.join(os.getcwd(), input_drive.label)
+	os.mkdir(commpressed_folder)
+
+	# Step 5 Compress Movie Files
+	logger.info(f'Compressing folder: {dvd_rip_folder}')
+	compress_movie_folder(input_folder=dvd_rip_folder, output_folder=commpressed_folder)
+
+	# Step 6: Remove rip folder
+	rm_dir(dvd_rip_folder)
+
+def rip_dvds(drives: List[Drive]):
+	compact_drives = [d for d in drives if d.is_compact_disc]
+	logger.debug(f'Connected compact drives: {compact_drives}')
+	for drive in compact_drives:
+		rip_dvd(drive)
 
 if __name__ == "__main__":
-	# makemkv(output_path="test", disc_letter="D:\\")
-	# main()
-	# makemkv()
-	pass
+	rip_dvd(list_drives()[1])
