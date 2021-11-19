@@ -1,0 +1,3 @@
+[console_scripts]
+pymakemkv = makemkv.__main__:cli
+

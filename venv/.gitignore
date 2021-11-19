@@ -1,0 +1,8 @@
+# created by virtualenv automatically
+test/
+test.*
+
+watcher.py
+metadata.py
+
+.vscode/
