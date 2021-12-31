@@ -3,7 +3,6 @@ from Drive import Drive
 import json
 import logging
 import subprocess
-from dataclasses import dataclass
 from typing import Callable, List
 
 import win32api, win32con, win32gui
