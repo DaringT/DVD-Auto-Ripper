@@ -55,10 +55,10 @@ class DeviceListener:
 		return win32gui.CreateWindow(class_atom, self.__class__.__name__, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
 
 	def start(self):
-		logger.info(f'Listening to drive changes')
+		logger.info('Listening to drive changes')
 		hwnd = self._create_window()
 		logger.debug(f'Created listener window with hwnd={hwnd:x}')
-		logger.debug(f'Listening to messages')
+		logger.debug('Listening to messages')
 		win32gui.PumpMessages()
 
 	def _on_message(self, hwnd: int, msg: int, wparam: int, lparam: int):

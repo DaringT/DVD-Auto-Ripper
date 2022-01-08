@@ -4,6 +4,7 @@ import subprocess
 import logging
 from typing import Callable, List
 import json
+import configparser
 
 from makemkv import MakeMKV, ProgressParser
 
@@ -11,6 +12,9 @@ from Drive import Drive
 
 logging.basicConfig(level=logging.INFO, filemode="w", filename="DVD_AUTO_RIPPER.log")
 logger = logging.getLogger(__name__)
+
+ini_config = configparser.ConfigParser()
+ini_config.read('settings.ini')
 
 def list_drives() -> List[Drive]:
 		"""
@@ -48,17 +52,20 @@ def list_drives() -> List[Drive]:
 					drive_type=drive_types[d['drivetype']]
 		) for d in devices]
 
-
 def files(path):
 	for file in os.listdir(path):
 		if os.path.isfile(os.path.join(path, file)):
 			yield file
 
 def makemkv(output_dir, drive: Drive, rip_one_title=False):
+	try:
 		with ProgressParser() as progress:
-				makemkv = MakeMKV(drive.letter, progress_handler=progress.parse_progress)
+				makemkv = MakeMKV(drive.letter, progress_handler=progress.parse_progress,
+				                  minlength=ini_config['Makemkv']['minlength'])
 				title = 0 if rip_one_title else "all"
 				makemkv.mkv(0, output_dir=output_dir)
+	except KeyboardInterrupt:
+		makemkv.kill()
 
 
 
@@ -76,8 +83,8 @@ def _makemkv_sys(output_path, drive: Drive, min_length=3600):
 
 def compress_movie_folder(input_folder, output_folder, output_file_type=".mp4", del_raw_rip=True):
 	# Danger if output_file_type is mkv problems can occur
-	json_preset = r"C:\Users\Daren\Videos\Testing Stuff\Custom.json"
-	handbrake_cli = r"C:\Users\Daren\HandBrakeCLI.exe"
+	json_preset = ini_config['Handbrake']['json_preset']
+	handbrake_cli = ini_config['Handbrake']['handbrakecli']
 
 	for input_file in files(input_folder):
 		f_name, exten = os.path.splitext(input_file)
@@ -119,7 +126,9 @@ def rip_dvd(input_drive: Drive):
 	logger.info(f'Ripping DVD: {input_drive.letter} {input_drive.label}')
 
 	# Step 1: Make the Rip Folder
-	dvd_rip_folder = os.path.join(os.getcwd(), input_drive.label+"_raw")
+	# dvd_rip_folder = os.path.join(os.getcwd(), input_drive.label+"_raw")
+	media_folder = ini_config['Output']['rip_location']
+	dvd_rip_folder = os.path.join(media_folder, input_drive.label+"_raw")
 	logger.debug(f"dvd_rip_folder= {dvd_rip_folder!r}")
 
 	os.mkdir(dvd_rip_folder)
@@ -131,7 +140,7 @@ def rip_dvd(input_drive: Drive):
 	input_drive.eject()
 
 	# Step 4 Make Compressed Folder
-	commpressed_folder = os.path.join(os.getcwd(), input_drive.label)
+	commpressed_folder = os.path.join(media_folder, input_drive.label)
 	os.mkdir(commpressed_folder)
 
 	# Step 5 Compress Movie Files
@@ -146,6 +155,7 @@ def rip_dvds(drives: List[Drive]):
 	logger.debug(f'Connected compact drives: {compact_drives}')
 	for drive in compact_drives:
 		rip_dvd(drive)
+
 
 if __name__ == "__main__":
 	rip_dvd(list_drives()[1])
