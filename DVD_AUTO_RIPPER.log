@@ -1,6 +1,4 @@
-INFO:__main__:Ripping DVD: D: DICK_VAN_DYKE_SEASON1_DISC4
-INFO:__main__:Ripping DICK_VAN_DYKE_SEASON1_DISC4 DICK_VAN_DYKE_SEASON1_DISC4 with MakeMKV
-INFO:makemkv:Running "makemkvcon mkv dev:D: 0 C:\Users\Daren\Videos\Media\DICK_VAN_DYKE_SEASON1_DISC4_raw --robot --progress=-same --noscan --minlength 1200"
+INFO:makemkv:Running "makemkvcon mkv dev:D: all C:\Users\Daren\Videos\Testing Stuff(copy) --robot --progress=-same --noscan --minlength 1200"
 INFO:makemkv:Scanning CD-ROM devices (5018)
 INFO:makemkv:Using direct disc access mode (3007)
 INFO:makemkv:Title #1 was added (6 cell(s), 0:25:29) (3028)
@@ -35,7 +33,6 @@ INFO:makemkv:Title 2 in VTS 5 is equal to title 1 and was skipped (3027)
 INFO:makemkv:Title 2 in VTS 6 is equal to title 1 and was skipped (3027)
 INFO:makemkv:Operation successfully completed (5011)
 INFO:makemkv:Saving all titles to MKV files (5024)
-INFO:makemkv:Saving 1 titles into directory file://C:\\Users\\Daren\\Videos\\Media\\DICK_VAN_DYKE_SEASON1_DISC4_raw (5014)
-INFO:makemkv:1 titles saved (5005)
-INFO:makemkv:Copy complete. 1 titles saved. (5036)
-INFO:__main__:Compressing folder: C:\Users\Daren\Videos\Media\DICK_VAN_DYKE_SEASON1_DISC4_raw
+INFO:makemkv:Saving 6 titles into directory file://C:\\Users\\Daren\\Videos\\Testing Stuff(copy) (5014)
+INFO:makemkv:6 titles saved (5005)
+INFO:makemkv:Copy complete. 6 titles saved. (5036)
