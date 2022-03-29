@@ -1,0 +1,11 @@
+{
+	"auto_complete_with_fields": true,
+	"color_scheme": "Packages/Color Scheme - Default/Monokai.sublime-color-scheme",
+	"font_size": 11,
+	"ignored_packages":
+	["Anaconda", "Jedi - Python autocompletion", "Vintage",
+	],
+	"tab_size": 4,
+	"theme": "Default.sublime-theme",
+	"translate_tabs_to_spaces": true,
+}

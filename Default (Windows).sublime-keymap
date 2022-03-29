@@ -1,0 +1,18 @@
+[
+  { "keys": ["ctrl+shift+b"], "command":"exec", "args":{"kill":"true"}},
+  { "keys": ["ctrl+alt+u"], "command": "upper_case" },
+  { "Keys": ["ctrl+alt+t"], "command": "title_case" },
+  { "keys": ["ctrl+alt+l"], "command": "lower_case" },
+
+  { "keys": ["ctrl+1"], "command": "fold_by_level", "args": {"level": 1} },
+  { "keys": ["ctrl+2"], "command": "fold_by_level", "args": {"level": 2} },
+  { "keys": ["ctrl+3"], "command": "fold_by_level", "args": {"level": 3} },
+  { "keys": ["ctrl+4"], "command": "fold_by_level", "args": {"level": 4} },
+  { "keys": ["ctrl+5"], "command": "fold_by_level", "args": {"level": 5} },
+  { "keys": ["ctrl+6"], "command": "fold_by_level", "args": {"level": 6} },
+  { "keys": ["ctrl+7"], "command": "fold_by_level", "args": {"level": 7} },
+  { "keys": ["ctrl+8"], "command": "fold_by_level", "args": {"level": 8} },
+  { "keys": ["ctrl+9"], "command": "fold_by_level", "args": {"level": 9} },
+  { "keys": ["ctrl+0"], "command": "unfold_all" },
+  { "keys": ["ctrl+j"], "command": "unfold_all" },
+  { "keys": ["ctrl+t"], "command": "fold_tag_attributes" }]
