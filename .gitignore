@@ -2,6 +2,8 @@
 test/
 test.*
 
+DVD_AUTO_RIPPER.log
+
 watcher.py
 metadata.py
 
